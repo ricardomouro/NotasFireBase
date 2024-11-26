@@ -1,0 +1,114 @@
+﻿@page "/login"
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<div class="container mt-5">
+    @if (currentUser == null)
+    {
+        <div class="text-center">
+            <h2 class="mb-4">Welcome to NotasFireBase</h2>
+            <button class="btn btn-primary" @onclick="HandleLogin" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Carregando...</span>
+                }
+                else
+                {
+                    <i class="fab fa-google me-2"></i>
+                    <span>Login com Google</span>
+                }
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="user-info text-center">
+            @if (!string.IsNullOrEmpty(currentUser.PhotoURL))
+            {
+                <img src="@currentUser.PhotoURL" alt="@currentUser.DisplayName"
+                     class="rounded-circle mb-3" style="width: 100px; height: 100px;" />
+            }
+            <h3>Bem-vindo, @currentUser.DisplayName!</h3>
+            <p class="text-muted">@currentUser.Email</p>
+            <button class="btn btn-danger mt-3" @onclick="HandleLogout" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Saindo...</span>
+                }
+                else
+                {
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span>Logout</span>
+                }
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private UserInfo? currentUser;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.UserChanged += HandleUserChanged;
+        await AuthService.InitializeFirebaseAsync();
+        currentUser = await AuthService.GetCurrentUserAsync();
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            isLoading = true;
+            currentUser = await AuthService.SignInWithGoogleAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        try
+        {
+            isLoading = true;
+            await AuthService.SignOutAsync();
+            currentUser = null;
+
+            // Force página reload após logout
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Logout error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleUserChanged(UserInfo? user)
+    {
+        currentUser = user;
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        AuthService.UserChanged -= HandleUserChanged;
+        await AuthService.DisposeAsync();
+    }
+}
