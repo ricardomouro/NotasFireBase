@@ -1,4 +1,4 @@
-﻿@page "/login"
+﻿@page "/Login"
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
@@ -7,7 +7,7 @@
     @if (currentUser == null)
     {
         <div class="text-center">
-            <h2 class="mb-4">Welcome to NotasFireBase</h2>
+            <h2 class="mb-4">Bem vindo NotasFireBase</h2>
             <button class="btn btn-primary" @onclick="HandleLogin" disabled="@isLoading">
                 @if (isLoading)
                 {
